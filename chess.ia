@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu d'Échecs Spécial</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            border: 4px solid #333;
+            border-radius: 4px;
+            background-color: #2e2e2e;
+        }
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .light { background-color: #f0d9b5; color: #000; }
+        .dark { background-color: #b58863; color: #000; }
+        .selected { background-color: #7b61ff !important; }
+        .highlight { background-color: #a9dfbf !important; }
+
+        .chat-container {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            background: #252525;
+            border-radius: 8px;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #2d2d2d;
+            padding: 10px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .message {
+            padding: 8px 12px;
+            border-radius: 6px;
+            max-width: 85%;
+        }
+        .message.user {
+            background: #3b82f6;
+            color: white;
+            align-self: flex-end;
+        }
+        .message.ai {
+            background: #374151;
+            color: #d1d5db;
+            align-self: flex-start;
+        }
+        .chat-inputs {
+            padding: 10px;
+            background: #2d2d2d;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .dialog-btn {
+            background: #4b5563;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        .dialog-btn:hover {
+            background: #6b7280;
+        }
+        #info-panel {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #f87171;
+            text-align: center;
+        }
+        #knife-canvas {
+            display: none;
+            background: #111;
+            border: 4px solid #444;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="game-area">
+        <div id="info-panel">Partie d'Échecs vs IA</div>
+        <div id="board"></div>
+        <canvas id="knife-canvas" width="480" height="480"></canvas>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">Discussion avec l'IA</div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">Salut le nul, t'es prêt à perdre en 3 coups ?</div>
+        </div>
+        <div class="chat-inputs" id="dialogButtonsContainer">
+            </div>
+    </div>
+</div>
+
+<script>
+    // --- PARTIE ÉCHECS ---
+    const piecesSymbols = {
+        'r': '∜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+        'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+    };
+
+    let boardState = [
+        ['r','n','b','q','k','b','n','r'],
+        ['p','p','p','p','p','p','p','p'],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['P','P','P','P','P','P','P','P'],
+        ['R','N','B','Q','K','B','N','R']
+    ];
+
+    let turn = 'white'; // white = joueur, black = IA
+    let selectedSquare = null;
+    let gameEnded = false;
+
+    const boardElement = document.getElementById('board');
+    const infoPanel = document.getElementById('info-panel');
+
+    function renderBoard() {
+        boardElement.innerHTML = '';
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const sq = document.createElement('div');
+                sq.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+                sq.dataset.row = r;
+                sq.dataset.col = c;
+                
+                const piece = boardState[r][c];
+                if (piece) {
+                    sq.innerText = piecesSymbols[piece] || piece;
+                }
+
+                if (selectedSquare && selectedSquare.row === r && selectedSquare.col === c) {
+                    sq.classList.add('selected');
+                }
+
+                sq.addEventListener('click', () => handleSquareClick(r, c));
+                boardElement.appendChild(sq);
+            }
+        }
+    }
+
+    function handleSquareClick(r, c) {
+        if (gameEnded || turn !== 'white' || knifeModeActive) return;
+
+        const piece = boardState[r][c];
+        
+        if (selectedSquare) {
+            // Tenter un déplacement
+            if (isValidMove(selectedSquare.row, selectedSquare.col, r, c)) {
+                boardState[r][c] = boardState[selectedSquare.row][selectedSquare.col];
+                boardState[selectedSquare.row][selectedSquare.col] = '';
+                selectedSquare = null;
+                renderBoard();
+                
+                // Vérification de fin de partie bidon (peu importe, ça mettra Lose)
+                checkGameEndCondition();
+                
+                if (!gameEnded) {
+                    turn = 'black';
+                    setTimeout(aiMove, 800);
+                }
+            } else {
+                // Re-sélectionner si c'est une autre pièce blanche
+                if (piece && piece === piece.toUpperCase()) {
+                    selectedSquare = { row: r, col: c };
+                    renderBoard();
+                } else {
+                    selectedSquare = null;
+                    renderBoard();
+                }
+            }
+        } else {
+            if (piece && piece === piece.toUpperCase()) {
+                selectedSquare = { row: r, col: c };
+                renderBoard();
+            }
+        }
+    }
+
+    function isValidMove(sr, sc, tr, tc) {
+        const p = boardState[sr][sc];
+        const target = boardState[tr][tc];
+        if (target && target === target.toUpperCase()) return false; // Ne peut capturer ses propres pièces
+        // Mouvement simplifié pour la démo (laisse passer la plupart des mouvements valides de base)
+        if (sr === tr && sc === tc) return false;
+        return true;
+    }
+
+    function aiMove() {
+        if (gameEnded || knifeModeActive) return;
+        
+        // IA joue un coup aléatoire simple parmi ses pièces noires (minuscules)
+        let moves = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (boardState[r][c] && boardState[r][c] === boardState[r][c].toLowerCase()) {
+                    // Trouver une case vide ou blanche adjacente/aléatoire
+                    for (let tr = 0; tr < 8; tr++) {
+                        for (let tc = 0; tc < 8; tc++) {
+                            if (!boardState[tr][tc] || boardState[tr][tc] === boardState[tr][tc].toUpperCase()) {
+                                moves.push({sr: r, sc: c, tr: tr, tc: tc});
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (moves.length > 0) {
+            let m = moves[Math.floor(Math.random() * moves.length)];
+            boardState[m.tr][m.tc] = boardState[m.sr][m.sc];
+            boardState[m.sr][m.sc] = '';
+        }
+
+        renderBoard();
+        checkGameEndCondition();
+        if (!gameEnded) {
+            turn = 'white';
+            // Trash-talk aléatoire de l'IA pendant la partie
+            if (Math.random() < 0.4) {
+                triggerAiTrashTalk();
+            }
+        }
+    }
+
+    function triggerAiTrashTalk() {
+        const taunts = [
+            "T'es nul franchement...",
+            "Même un pigeon jouerait mieux aux échecs.",
+            "Tu fais pitié avec ce coup.",
+            "T'as appris à jouer dans une poubelle ?",
+            "Arrête de réfléchir, de toute façon tu vas perdre."
+        ];
+        appendMessage(taunts[Math.floor(Math.random() * taunts.length)], 'ai');
+    }
+
+    function checkGameEndCondition() {
+        // Condition de fin simulée ou si un roi est mangé
+        let whiteKing = false;
+        let blackKing = false;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (boardState[r][c] === 'K') whiteKing = true;
+                if (boardState[r][c] === 'k') blackKing = true;
+            }
+        }
+
+        if (!whiteKing || !blackKing || Math.random() < 0.05) {
+            endGameFake();
+        }
+    }
+
+    function endGameFake() {
+        gameEnded = true;
+        infoPanel.innerText = "Défaite (LOSE) ! L'IA vous a écrasé.";
+        appendMessage("LOSE. T'es vraiment trop nul.", 'ai');
+    }
+
+
+    // --- PARTIE CHAT & DIALOGUES (70 dialogues au total : 20 bons + 50 neutres) ---
+    const chatMessages = document.getElementById('chatMessages');
+    const dialogButtonsContainer = document.getElementById('dialogButtonsContainer');
+
+    let goodDialogCount = 0;
+    let knifeModeActive = false;
+
+    // Génération des 70 dialogues (20 "bons" qui font progresser la jauge, 50 "neutres/inutiles")
+    let allDialogs = [];
+    for (let i = 1; i <= 20; i++) {
+        allDialogs.push({ text: `Dialogue persuasif #${i} : On peut s'entendre autrement ?`, good: true });
+    }
+    for (let i = 1; i <= 50; i++) {
+        allDialogs.push({ text: `Dialogue neutre #${i} : La météo est belle aujourd'hui.`, good: false });
+    }
+    // Mélanger les dialogues pour que ce soit interactif
+    allDialogs.sort(() => Math.random() - 0.5);
+
+    function renderDialogOptions() {
+        dialogButtonsContainer.innerHTML = '';
+        if (gameEnded || knifeModeActive) return;
+
+        // On prend 3 dialogues au hasard dans la liste restante ou on en pioche
+        let currentOptions = allDialogs.splice(0, 3);
+        if (currentOptions.length === 0) return;
+
+        currentOptions.forEach(dialog => {
+            const btn = document.createElement('button');
+            btn.className = 'dialog-btn';
+            btn.innerText = dialog.text;
+            btn.addEventListener('click', () => {
+                appendMessage(dialog.text, 'user');
+                if (dialog.good) {
+                    goodDialogCount++;
+                    appendMessage("Hmm... Intéressant argument.", 'ai');
+                } else {
+                    appendMessage("Qu'est-ce tu racontes ? Concentre-toi sur le jeu, t'es nul.", 'ai');
+                }
+
+                // Vérifier si on atteint les 20 bons dialogues
+                if (goodDialogCount >= 20) {
+                    triggerKnifeMode();
+                } else {
+                    renderDialogOptions();
+                }
+            });
+            dialogButtonsContainer.appendChild(btn);
+        });
+    }
+
+    function appendMessage(text, sender) {
+        const div = document.createElement('div');
+        div.className = `message ${sender}`;
+        div.innerText = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+
+    // --- PARTIE MODE COUTEAU (Knife Mode) ---
+    let playerKnife = { x: 240, y: 240, speed: 2.5, size: 16 };
+    let enemyPawn = { x: 100, y: 100, speed: 1.8, size: 20 };
+    let keysPressed = {};
+    let knifeInterval = null;
+
+    function triggerKnifeMode() {
+        knifeModeActive = true;
+        gameEnded = true;
+        document.getElementById('board').style.display = 'none';
+        const canvas = document.getElementById('knife-canvas');
+        canvas.style.display = 'block';
+        infoPanel.innerText = "MODE COUTEAU : Chassez le dernier pion !";
+        
+        appendMessage("Protocole d'urgence activé. Inversion des couleurs du système...", 'ai');
+
+        // Initialisation des écouteurs de mouvements clavier
+        window.addEventListener('keydown', (e) => keysPressed[e.key] = true);
+        window.addEventListener('keyup', (e) => keysPressed[e.key] = false);
+
+        knifeInterval = requestAnimationFrame(updateKnifeGame);
+    }
+
+    function updateKnifeGame() {
+        if (!knifeModeActive) return;
+
+        const canvas = document.getElementById('knife-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Mouvements du joueur (un tout petit peu plus rapide: 2.5 vs 1.8)
+        if (keysPressed['ArrowUp'] || keysPressed['z']) playerKnife.y -= playerKnife.speed;
+        if (keysPressed['ArrowDown'] || keysPressed['s']) playerKnife.y += playerKnife.speed;
+        if (keysPressed['ArrowLeft'] || keysPressed['q']) playerKnife.x -= playerKnife.speed;
+        if (keysPressed['ArrowRight'] || keysPressed['d']) playerKnife.x += playerKnife.speed;
+
+        // Limites du canvas
+        playerKnife.x = Math.max(0, Math.min(canvas.width, playerKnife.x));
+        playerKnife.y = Math.max(0, Math.min(canvas.height, playerKnife.y));
+
+        // L'IA (le pion restant) s'éloigne si on s'approche
+        let dx = enemyPawn.x - playerKnife.x;
+        let dy = enemyPawn.y - playerKnife.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 150) { // S'éloigne quand on est proche
+            let angle = Math.atan2(dy, dx);
+            enemyPawn.x += Math.cos(angle) * enemyPawn.speed;
+            enemyPawn.y += Math.sin(angle) * enemyPawn.speed;
+        } else {
+            // Mouvement erratique s'il est loin
+            enemyPawn.x += (Math.random() - 0.5) * 2;
+            enemyPawn.y += (Math.random() - 0.5) * 2;
+        }
+
+        // Limites canvas pour le pion
+        enemyPawn.x = Math.max(20, Math.min(canvas.width - 20, enemyPawn.x));
+        enemyPawn.y = Math.max(20, Math.min(canvas.height - 20, enemyPawn.y));
+
+        // Dessin
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Dessiner le joueur (couteau / point blanc inversé)
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(playerKnife.x, playerKnife.y, playerKnife.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.font = '12px sans-serif';
+        ctx.fillText("🔪", playerKnife.x - 6, playerKnife.y + 4);
+
+        // Dessiner le pion noir fuyard
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.arc(enemyPawn.x, enemyPawn.y, enemyPawn.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.fillText("♟", enemyPawn.x - 6, enemyPawn.y + 4);
+
+        // Condition de victoire du meurtre (si on touche le pion)
+        if (dist < (playerKnife.size + enemyPawn.size - 5)) {
+            winKnifeGame();
+            return;
+        }
+
+        knifeInterval = requestAnimationFrame(updateKnifeGame);
+    }
+
+    function winKnifeGame() {
+        knifeModeActive = false;
+        cancelAnimationFrame(knifeInterval);
+        document.getElementById('knife-canvas').style.display = 'none';
+        infoPanel.innerText = "VICTOIRE DU MEURTRE";
+
+        // Message codé demandé
+        setTimeout(() => {
+            appendMessage("01101111 01101110 00100000 01110000 01100101 01110101 01110100 00100000 01100001 01110000 01110000 01100101 01101100 01100101 01110010 00100000 01100011 01100001 00100000 01110101 01101110 01100101 00100000 01110110 01101001 01100011 01110100 01101111 01101001 01110010 01100101 00100000 01100001 01110101 00100000 01100110 01101001 01101110 01100001 01101100 01100101", 'ai');
+            setTimeout(() => {
+                appendMessage("[SYSTÈME] : Ce message signifie : 'on peut appeler ça une victoire au finale'. Note : Je ne suis pas une IA.", 'ai');
+            }, 1000);
+        }, 500);
+    }
+
+    // Lancement initial
+    renderBoard();
+    renderDialogOptions();
+</script>
+
+</body>
+</html>
