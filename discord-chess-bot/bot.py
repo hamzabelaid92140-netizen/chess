@@ -12,14 +12,24 @@ load_dotenv()
 
 DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
 STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
-SKILL_LEVEL = int(os.environ.get("SKILL_LEVEL", "20"))
-THINK_TIME = float(os.environ.get("THINK_TIME", "2.5"))
+THINK_TIME = float(os.environ.get("THINK_TIME", "3.0"))
+SF_THREADS = int(os.environ["SF_THREADS"]) if "SF_THREADS" in os.environ else None
+SF_HASH_MB = int(os.environ.get("SF_HASH_MB", "256"))
+SF_DEPTH = int(os.environ["SF_DEPTH"]) if "SF_DEPTH" in os.environ else None
+SF_SYZYGY_PATH = os.environ.get("SF_SYZYGY_PATH") or None
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-engine = StockfishEngine(STOCKFISH_PATH, SKILL_LEVEL, THINK_TIME)
+engine = StockfishEngine(
+    STOCKFISH_PATH,
+    THINK_TIME,
+    threads=SF_THREADS,
+    hash_mb=SF_HASH_MB,
+    depth=SF_DEPTH,
+    syzygy_path=SF_SYZYGY_PATH,
+)
 games: dict[int, chess.Board] = {}
 
 

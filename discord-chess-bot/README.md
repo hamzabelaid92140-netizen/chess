@@ -51,8 +51,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Remplis `.env` avec ton token Discord et, si besoin, le chemin vers Stockfish
-(`SKILL_LEVEL=20` = force maximale par defaut).
+Remplis `.env` avec ton token Discord et, si besoin, le chemin vers Stockfish.
 
 ### 5. Lancer le bot
 
@@ -60,8 +59,24 @@ Remplis `.env` avec ton token Discord et, si besoin, le chemin vers Stockfish
 python bot.py
 ```
 
-## Difficulte
+## Reglages pour la force maximale
 
-`SKILL_LEVEL` va de 0 (tres faible) a 20 (force maximale, quasi injouable).
-`THINK_TIME` est le temps de reflexion du moteur par coup, en secondes : plus
-il est eleve, plus le bot joue fort (et plus il met de temps a repondre).
+Le bot ne limite jamais artificiellement Stockfish (pas de "Skill Level" qui
+simule des erreurs humaines). Sa force vient de ces reglages, dans `.env` :
+
+- **`THINK_TIME`** : temps de reflexion par coup, en secondes. Plus il est
+  eleve, plus la recherche va loin. 3 secondes suffit deja largement contre
+  un joueur amateur ; monte a 5-10s pour un adversaire plus fort.
+- **`SF_THREADS`** : nombre de coeurs CPU utilises pour la recherche.
+  Laisse-le vide pour un choix automatique (nb de coeurs - 1), ou fixe-le
+  si tu veux garder des coeurs libres pour autre chose sur la machine.
+- **`SF_HASH_MB`** : taille de la table de transposition. Plus elle est
+  grande, moins le moteur recalcule des positions deja vues. 256 Mo est un
+  bon defaut, monte a 1024+ si la machine a assez de RAM.
+- **`SF_DEPTH`** : profondeur de recherche minimale garantie (en plus du
+  temps). Optionnel, utile si tu veux forcer une recherche tres profonde
+  independamment du temps disponible.
+- **`SF_SYZYGY_PATH`** : chemin vers des tables de finales Syzygy
+  (telechargeables sur https://tablebase.lichess.ovh/tables/standard/).
+  Avec ca, le moteur joue les finales a 7 pieces ou moins de facon
+  mathematiquement parfaite, plus de recherche heuristique du tout.
