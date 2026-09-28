@@ -8,10 +8,10 @@ class StockfishEngine:
     """Wrapper autour de Stockfish configure pour la force maximale.
 
     Pas de "Skill Level" : ce parametre introduit volontairement des
-    erreurs pour simuler un joueur humain, ce qu'on ne veut surtout pas
-    ici. La force vient de Threads/Hash (recherche plus large et plus
-    profonde dans le meme temps) et, si dispo, des tables Syzygy pour un
-    jeu de finale mathematiquement parfait.
+    erreurs pour simuler un joueur humain. La force vient de
+    Threads/Hash (recherche plus large et plus profonde dans le meme
+    temps) et, si dispo, des tables Syzygy pour un jeu de finale
+    mathematiquement parfait.
     """
 
     def __init__(
