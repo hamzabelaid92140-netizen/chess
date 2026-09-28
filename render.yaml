@@ -11,4 +11,6 @@ services:
       - key: THINK_TIME
         value: "3.0"
       - key: SF_HASH_MB
-        value: "256"
+        value: "32"
+      - key: SF_THREADS
+        value: "1"
