@@ -47,23 +47,48 @@ Verifie le chemin de Stockfish avec `which stockfish` (souvent
 
 Roblox tourne sur les serveurs de Roblox, pas sur ton PC : `HttpService`
 ne peut donc pas atteindre `localhost`. Il faut heberger ce backend sur une
-adresse **HTTPS publique**. Options simples et gratuites/pas cheres pour
-demarrer :
+adresse **HTTPS publique**. C'est cette URL-la que tu mets dans `BackendUrl`
+cote Roblox.
 
-- **Render** (render.com) : deploiement direct depuis GitHub, plan gratuit
-  suffisant pour tester.
-- **Railway** (railway.app) : pareil, tres simple.
-- **Fly.io** : un peu plus technique mais gratuit pour un petit service.
+Un `Dockerfile` est fourni dans ce dossier (il installe Stockfish
+automatiquement), le chemin le plus simple est donc **Render** avec deploiement
+Docker.
 
-Dans tous les cas :
-1. Connecte ce repo GitHub au service.
-2. Indique le dossier `roblox-chess/backend` comme racine du projet.
-3. Renseigne les variables d'environnement (`STOCKFISH_PATH`, `API_KEY`,
-   etc.) dans les settings du service — jamais dans un fichier commite.
-4. Assure-toi que Stockfish est installe sur l'image (certains services
-   permettent un `Dockerfile` ou un `apt.txt`/`nixpacks.toml` pour ca).
-5. Recupere l'URL HTTPS publique donnee par le service, tu en auras besoin
-   cote Roblox.
+### Render, pas a pas
+
+1. Va sur https://render.com et cree un compte (tu peux te connecter avec
+   GitHub directement).
+2. Clique sur **New +** -> **Web Service**.
+3. Connecte ton compte GitHub si ce n'est pas deja fait, puis choisis le
+   repo `hamzabelaid92140-netizen/chess`.
+4. Dans les reglages du service :
+   - **Root Directory** : `roblox-chess/backend`
+   - **Environment** / **Runtime** : Render doit detecter automatiquement
+     le `Dockerfile` et proposer "Docker" — laisse-le faire.
+   - **Instance Type** : Free suffit pour tester.
+5. Dans l'onglet **Environment** (variables d'environnement), ajoute :
+   - `API_KEY` = ta cle secrete (celle que tu as generee, la meme que
+     cote Roblox)
+   - Les autres (`THINK_TIME`, `SF_HASH_MB`, etc.) sont optionnelles, les
+     valeurs par defaut du code suffisent pour commencer.
+6. Clique sur **Create Web Service**. Le premier build prend quelques
+   minutes (il installe Stockfish + les dependances Python).
+7. Une fois le statut passe a **Live**, Render affiche l'URL en haut de la
+   page, du type :
+   ```
+   https://chess-backend-xxxx.onrender.com
+   ```
+   **C'est cette URL exacte que tu mets dans `BackendUrl`**, dans le
+   `Config` Roblox (pas besoin d'ajouter `/` a la fin).
+
+Note sur le plan gratuit Render : le service s'endort apres quelques
+minutes d'inactivite et met 30-60s a se reveiller au premier appel suivant
+— la premiere partie apres une pause peut donc mettre un peu de temps a
+demarrer, c'est normal.
+
+### Alternatives
+- **Railway** (railway.app) : meme principe, detecte aussi le `Dockerfile`.
+- **Fly.io** : un peu plus technique (CLI a installer) mais gratuit aussi.
 
 ## Securite
 
