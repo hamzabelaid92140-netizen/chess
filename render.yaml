@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: chess-backend
+    runtime: docker
+    rootDir: roblox-chess/backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: API_KEY
+        sync: false
+      - key: THINK_TIME
+        value: "3.0"
+      - key: SF_HASH_MB
+        value: "256"
