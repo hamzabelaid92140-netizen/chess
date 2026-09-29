@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commande confirmée — VELTA</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="announce">Livraison offerte dès 60€ d'achat · Retours gratuits sous 30 jours</div>
+
+<header class="site-header">
+  <div class="container header-bar">
+    <a href="index.html" class="logo">VEL<span>TA</span></a>
+    <nav class="nav-main" aria-label="Navigation principale">
+      <a href="index.html">Accueil</a>
+      <a href="shop.html">Boutique</a>
+      <a href="about.html">Notre histoire</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="cart.html" class="icon-btn" aria-label="Voir le panier">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 4.5 2H2"/><circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/></svg>
+        <span class="cart-count" data-cart-count data-count="0">0</span>
+      </a>
+      <button class="menu-toggle icon-btn" aria-label="Ouvrir le menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<div class="nav-scrim"></div>
+<nav class="nav-drawer" aria-label="Navigation mobile">
+  <a href="index.html">Accueil</a>
+  <a href="shop.html">Boutique</a>
+  <a href="about.html">Notre histoire</a>
+  <a href="contact.html">Contact</a>
+  <a href="cart.html">Panier</a>
+</nav>
+
+<main>
+  <div class="container" style="max-width:640px; text-align:center; padding-block: 96px;">
+    <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.4" style="color:var(--olive); margin:0 auto 24px;"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+    <span class="eyebrow" style="justify-content:center;">Merci !</span>
+    <h1 style="margin-block:16px 12px;">Votre commande est confirmée</h1>
+    <p style="color:var(--ink-mute); margin-bottom:8px;" id="refLine"></p>
+    <p style="color:var(--ink-mute); margin-bottom:36px;">Un e-mail de confirmation vient de vous être envoyé. Vous recevrez le numéro de suivi dès l'expédition.</p>
+    <a href="shop.html" class="btn btn-primary">Continuer mes achats</a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-bottom" style="border-top:none;">
+    <span>© <span data-year></span> VELTA. Tous droits réservés.</span>
+  </div>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const sessionId = new URLSearchParams(window.location.search).get("session_id");
+  if (sessionId) {
+    document.getElementById("refLine").textContent = "Référence : " + sessionId.slice(-12).toUpperCase();
+  }
+  // Le paiement est confirmé côté serveur par le webhook Stripe ;
+  // on vide simplement le panier local pour l'expérience utilisateur.
+  localStorage.removeItem(CART_KEY);
+  updateCartBadge();
+</script>
+</body>
+</html>

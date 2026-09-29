@@ -1,0 +1,11 @@
+{
+  "name": "velta-storefront",
+  "private": true,
+  "version": "1.0.0",
+  "description": "VELTA — boutique e-commerce (site statique + API serverless Vercel : Stripe, Supabase, CJ Dropshipping).",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "stripe": "^17.0.0",
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}

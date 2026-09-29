@@ -58,13 +58,6 @@
         <p>Parcourez la boutique pour trouver votre prochain essentiel.</p>
         <a href="shop.html" class="btn btn-primary">Découvrir la boutique</a>
       </div>
-      <div id="orderConfirm" style="display:none; padding-block: 48px; text-align:center;">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.4" style="color:var(--olive); margin:0 auto 20px;"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
-        <h2 style="margin-bottom:10px;">Commande confirmée</h2>
-        <p style="color:var(--ink-mute); margin-bottom:8px;">Référence : <strong id="orderRef"></strong></p>
-        <p style="color:var(--ink-mute); margin-bottom:28px;">Un e-mail de confirmation vous sera envoyé sous peu.</p>
-        <a href="shop.html" class="btn btn-outline">Continuer mes achats</a>
-      </div>
     </div>
 
     <aside class="cart-summary" id="cartSummary">
@@ -73,7 +66,8 @@
       <div class="summary-row"><span>Livraison</span><span data-shipping>Offerte</span></div>
       <div class="summary-row total"><span>Total</span><span data-total>0,00 €</span></div>
       <button class="btn btn-accent btn-block" id="checkoutBtn" type="button" style="margin-top:20px;">Passer la commande</button>
-      <p class="summary-note">Livraison offerte dès 60€ d'achat · Paiement sécurisé</p>
+      <p class="error-msg" id="checkoutError" style="display:none; margin-top:10px;"></p>
+      <p class="summary-note">Livraison offerte dès 60€ d'achat · Paiement sécurisé par Stripe</p>
     </aside>
   </div>
 </main>
@@ -128,16 +122,32 @@
 <script src="js/cart.js"></script>
 <script src="js/main.js"></script>
 <script>
-  document.getElementById("checkoutBtn").addEventListener("click", () => {
+  document.getElementById("checkoutBtn").addEventListener("click", async () => {
     if (getCartCount() === 0) return;
-    const ref = "VLT-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-    document.getElementById("orderRef").textContent = ref;
-    document.getElementById("cartList").style.display = "none";
-    document.getElementById("cartEmpty").style.display = "none";
-    document.getElementById("cartSummary").style.display = "none";
-    document.getElementById("orderConfirm").style.display = "block";
-    localStorage.removeItem(CART_KEY);
-    updateCartBadge();
+
+    const btn = document.getElementById("checkoutBtn");
+    const errorEl = document.getElementById("checkoutError");
+    errorEl.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Redirection vers le paiement…";
+
+    const items = getCartItems().map(({ product, qty }) => ({ id: product.id, qty }));
+
+    try {
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Erreur de paiement");
+      window.location.href = data.url;
+    } catch (err) {
+      errorEl.textContent = "Paiement indisponible pour le moment : " + err.message;
+      errorEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Passer la commande";
+    }
   });
 </script>
 </body>

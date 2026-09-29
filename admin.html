@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — VELTA</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body { background: var(--ivory-deep); }
+  .admin-wrap { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+  .admin-head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 28px; gap:16px; flex-wrap: wrap; }
+  .admin-stats { display:flex; gap:16px; flex-wrap:wrap; margin-bottom: 28px; }
+  .stat-box { background: var(--paper); border:1px solid var(--line); border-radius: var(--radius-md); padding: 16px 20px; min-width: 160px; }
+  .stat-box .num { font-family: var(--font-display); font-size: 24px; }
+  .stat-box .lbl { font-size: 12px; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .04em; }
+  table { width:100%; border-collapse: collapse; background: var(--paper); border:1px solid var(--line); border-radius: var(--radius-md); overflow:hidden; }
+  th, td { text-align:left; padding: 12px 14px; font-size: 13.5px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--ivory-deep); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-mute); }
+  tr:last-child td { border-bottom: none; }
+  .status-pill { display:inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight:600; }
+  .status-paid { background: var(--rust-tint); color: var(--rust-dark); }
+  .status-sent_to_supplier { background: var(--olive-tint); color: var(--olive); }
+  .status-shipped { background: #E1E9F5; color: #33507A; }
+  .status-cancelled { background: #EFE4E4; color: #8a3a3a; }
+  .items-list { font-size: 12.5px; color: var(--ink-soft); }
+  .items-list div { margin-bottom: 2px; }
+  .fulfill-btn { font-size: 12px; padding: 7px 12px; }
+  .login-box { max-width: 380px; margin: 15vh auto; background: var(--paper); border:1px solid var(--line); border-radius: var(--radius-lg); padding: 32px; text-align:center; }
+  .login-box input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius: var(--radius-sm); margin: 16px 0; }
+  .error-text { color: var(--error); font-size: 13px; margin-top: 10px; }
+  .muted { color: var(--ink-mute); font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<div id="loginView" class="login-box">
+  <h1 style="font-size:22px;">Accès admin VELTA</h1>
+  <p class="muted">Entrez le jeton admin (ADMIN_TOKEN) configuré sur Vercel.</p>
+  <input type="password" id="tokenInput" placeholder="Jeton admin">
+  <button class="btn btn-primary btn-block" id="loginBtn">Entrer</button>
+  <p class="error-text" id="loginError" style="display:none;"></p>
+</div>
+
+<div id="dashView" class="admin-wrap" style="display:none;">
+  <div class="admin-head">
+    <div>
+      <span class="eyebrow">Back-office</span>
+      <h1 style="font-size:28px;">Commandes VELTA</h1>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-outline" id="refreshBtn">Actualiser</button>
+      <button class="btn btn-ghost" id="logoutBtn">Se déconnecter</button>
+    </div>
+  </div>
+
+  <div class="admin-stats" id="statsRow"></div>
+
+  <div style="overflow-x:auto;">
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Client</th>
+          <th>Livraison</th>
+          <th>Articles</th>
+          <th>Total</th>
+          <th>Marge est.</th>
+          <th>Statut</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+  </div>
+  <p class="muted" id="emptyMsg" style="display:none; margin-top:20px;">Aucune commande pour le moment.</p>
+</div>
+
+<script>
+  const TOKEN_KEY = "velta_admin_token";
+  const loginView = document.getElementById("loginView");
+  const dashView = document.getElementById("dashView");
+
+  function getToken() { return sessionStorage.getItem(TOKEN_KEY); }
+
+  function showLogin(message) {
+    loginView.style.display = "block";
+    dashView.style.display = "none";
+    if (message) {
+      const err = document.getElementById("loginError");
+      err.textContent = message;
+      err.style.display = "block";
+    }
+  }
+
+  function showDash() {
+    loginView.style.display = "none";
+    dashView.style.display = "block";
+    loadOrders();
+  }
+
+  document.getElementById("loginBtn").addEventListener("click", async () => {
+    const token = document.getElementById("tokenInput").value.trim();
+    if (!token) return;
+    sessionStorage.setItem(TOKEN_KEY, token);
+    await loadOrders();
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  });
+
+  document.getElementById("refreshBtn").addEventListener("click", loadOrders);
+
+  const STATUS_LABELS = {
+    paid: "Payée",
+    sent_to_supplier: "Envoyée au fournisseur",
+    shipped: "Expédiée",
+    cancelled: "Annulée",
+  };
+
+  function formatEUR(n) {
+    return (Number(n) || 0).toFixed(2).replace(".", ",") + " €";
+  }
+
+  async function loadOrders() {
+    const token = getToken();
+    if (!token) { showLogin(); return; }
+
+    try {
+      const res = await fetch("/api/orders", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        showLogin("Jeton invalide.");
+        return;
+      }
+      if (!res.ok) throw new Error("Erreur serveur");
+
+      const { orders } = await res.json();
+      showDash();
+      renderStats(orders);
+      renderTable(orders);
+    } catch (err) {
+      showLogin("Impossible de contacter le serveur : " + err.message);
+    }
+  }
+
+  function renderStats(orders) {
+    const totalSales = orders.reduce((s, o) => s + Number(o.amount_total || 0), 0);
+    const totalMargin = orders.reduce((s, o) => s + (Number(o.amount_total || 0) - Number(o.amount_cost || 0)), 0);
+    const pending = orders.filter((o) => o.status === "paid").length;
+
+    document.getElementById("statsRow").innerHTML = `
+      <div class="stat-box"><div class="num">${orders.length}</div><div class="lbl">Commandes</div></div>
+      <div class="stat-box"><div class="num">${formatEUR(totalSales)}</div><div class="lbl">Chiffre d'affaires</div></div>
+      <div class="stat-box"><div class="num">${formatEUR(totalMargin)}</div><div class="lbl">Marge estimée</div></div>
+      <div class="stat-box"><div class="num">${pending}</div><div class="lbl">À envoyer au fournisseur</div></div>
+    `;
+  }
+
+  function renderTable(orders) {
+    const emptyMsg = document.getElementById("emptyMsg");
+    const tbody = document.getElementById("ordersBody");
+
+    if (orders.length === 0) {
+      tbody.innerHTML = "";
+      emptyMsg.style.display = "block";
+      return;
+    }
+    emptyMsg.style.display = "none";
+
+    tbody.innerHTML = orders.map((o) => {
+      const margin = Number(o.amount_total || 0) - Number(o.amount_cost || 0);
+      const itemsHTML = (o.order_items || [])
+        .map((it) => `<div>${it.quantity} × ${it.product_name}</div>`)
+        .join("");
+      const date = new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+
+      const actionHTML = o.status === "paid"
+        ? `<button class="btn btn-accent fulfill-btn" data-fulfill="${o.id}" type="button">Envoyer à CJ</button>`
+        : o.cj_order_id
+          ? `<span class="muted">Réf. CJ : ${o.cj_order_id}</span>`
+          : `<span class="muted">—</span>`;
+
+      return `
+        <tr data-row="${o.id}">
+          <td>${date}</td>
+          <td>${o.customer_name || "—"}<br><span class="muted">${o.customer_email || ""}</span></td>
+          <td>${o.shipping_line1 || ""}<br>${o.shipping_postal_code || ""} ${o.shipping_city || ""}<br>${o.shipping_country || ""}</td>
+          <td class="items-list">${itemsHTML}</td>
+          <td>${formatEUR(o.amount_total)}</td>
+          <td>${formatEUR(margin)}</td>
+          <td><span class="status-pill status-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></td>
+          <td>${actionHTML}</td>
+        </tr>
+      `;
+    }).join("");
+
+    tbody.querySelectorAll("[data-fulfill]").forEach((btn) => {
+      btn.addEventListener("click", () => fulfillOrder(btn.dataset.fulfill, btn));
+    });
+  }
+
+  async function fulfillOrder(orderId, btn) {
+    btn.disabled = true;
+    btn.textContent = "Envoi…";
+    try {
+      const res = await fetch("/api/fulfill", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ orderId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Échec de l'envoi");
+      await loadOrders();
+    } catch (err) {
+      alert("Envoi à CJ Dropshipping impossible :\n\n" + err.message + "\n\nTu peux passer cette commande manuellement sur cjdropshipping.com en attendant.");
+      btn.disabled = false;
+      btn.textContent = "Envoyer à CJ";
+    }
+  }
+
+  if (getToken()) loadOrders();
+</script>
+</body>
+</html>

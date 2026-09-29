@@ -8,6 +8,8 @@ const PRODUCTS = [
     name: "Cabas Toile Épaisse",
     category: "Sacs",
     price: 89,
+    costPrice: 37.38, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "tote-bag",
     tint: "tint-1",
@@ -27,6 +29,8 @@ const PRODUCTS = [
     name: "Portefeuille Cuir Grainé",
     category: "Accessoires",
     price: 59,
+    costPrice: 24.78, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "wallet",
     tint: "tint-2",
@@ -46,6 +50,8 @@ const PRODUCTS = [
     name: "Bouteille Isotherme 500ml",
     category: "Maison",
     price: 39,
+    costPrice: 16.38, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: 49,
     icon: "bottle",
     tint: "tint-3",
@@ -65,6 +71,8 @@ const PRODUCTS = [
     name: "Bougie Parfumée Cèdre",
     category: "Bien-être",
     price: 32,
+    costPrice: 13.44, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "candle",
     tint: "tint-4",
@@ -84,6 +92,8 @@ const PRODUCTS = [
     name: "Montre Minimaliste Acier",
     category: "Accessoires",
     price: 149,
+    costPrice: 62.58, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "watch",
     tint: "tint-1",
@@ -103,6 +113,8 @@ const PRODUCTS = [
     name: "Lunettes de Soleil Rondes",
     category: "Accessoires",
     price: 79,
+    costPrice: 33.18, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "sunglasses",
     tint: "tint-2",
@@ -122,6 +134,8 @@ const PRODUCTS = [
     name: "Carnet Ligné Relié Toile",
     category: "Maison",
     price: 24,
+    costPrice: 10.08, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "notebook",
     tint: "tint-3",
@@ -141,6 +155,8 @@ const PRODUCTS = [
     name: "Écharpe Laine Mérinos",
     category: "Accessoires",
     price: 69,
+    costPrice: 28.98, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: 89,
     icon: "scarf",
     tint: "tint-4",
@@ -160,6 +176,8 @@ const PRODUCTS = [
     name: "Mug Céramique Émaillé",
     category: "Maison",
     price: 22,
+    costPrice: 9.24, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "mug",
     tint: "tint-1",
@@ -179,6 +197,8 @@ const PRODUCTS = [
     name: "Sac Banane Cuir Souple",
     category: "Sacs",
     price: 65,
+    costPrice: 27.3, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "belt-bag",
     tint: "tint-2",
@@ -198,6 +218,8 @@ const PRODUCTS = [
     name: "Diffuseur Huiles Essentielles",
     category: "Bien-être",
     price: 45,
+    costPrice: 18.9, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "diffuser",
     tint: "tint-3",
@@ -217,6 +239,8 @@ const PRODUCTS = [
     name: "Plaid Coton Bio Gaufré",
     category: "Maison",
     price: 55,
+    costPrice: 23.1, // coût fournisseur estimé — à remplacer par le vrai prix CJ Dropshipping
+    cjPid: null, // identifiant produit CJ Dropshipping — à renseigner une fois le produit sourcé
     oldPrice: null,
     icon: "blanket",
     tint: "tint-4",
@@ -268,4 +292,10 @@ function productCardHTML(product) {
       </div>
     </article>
   `;
+}
+
+// Rend ce fichier utilisable à la fois dans le navigateur (variables globales)
+// et côté serveur (Node, fonctions /api) sans dupliquer le catalogue.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { PRODUCTS, CATEGORIES, getProductById, formatPrice };
 }
