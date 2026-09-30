@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Couloir — carnet de croquis</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="crosshair"></div>
+
+<div id="overlay">
+  <h1>Le couloir</h1>
+  <p>Un espace en 3D, dessiné comme sur un carnet de croquis.</p>
+  <p class="hint">Clique pour entrer &middot; <b>ZQSD/WASD</b> pour marcher &middot; souris pour regarder &middot; <b>Échap</b> pour sortir</p>
+</div>
+
+<div id="blocked" class="hidden">
+  <p>Clique n'importe où sur la scène pour reprendre le contrôle de la caméra.</p>
+</div>
+
+<div id="speech" class="hidden"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+  }
+}
+</script>
+<script src="vendor/roughjs/rough.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
