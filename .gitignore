@@ -2,3 +2,4 @@
 __pycache__/
 *.pyc
 data/hair_ids.json
+data/posted_hair_ids.json
