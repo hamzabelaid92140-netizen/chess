@@ -59,8 +59,16 @@ class HairCatalog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):
+        try:
+            await self._handle_new_thread(thread)
+        except Exception:
+            logger.exception("Erreur en traitant le nouveau post %s", thread.id)
+
+    async def _handle_new_thread(self, thread: discord.Thread):
         if not HAIR_ID_CHANNEL_ID or thread.parent_id != HAIR_ID_CHANNEL_ID:
             return
+
+        logger.info("Nouveau post détecté dans le forum hair-id : %s", thread.id)
 
         if VERIFIED_ROLE_ID and isinstance(thread.owner, discord.Member):
             role = thread.guild.get_role(VERIFIED_ROLE_ID)
@@ -97,10 +105,28 @@ class HairCatalog(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def auto_post(self):
+        try:
+            await self._auto_post_once()
+        except Exception:
+            # Ne jamais laisser une exception arrêter la boucle silencieusement.
+            logger.exception("Cycle d'auto-post interrompu par une erreur inattendue")
+
+    async def _auto_post_once(self):
         if not HAIR_ID_CHANNEL_ID:
+            logger.warning("HAIR_ID_CHANNEL_ID n'est pas configuré, auto-post désactivé")
             return
         channel = self.bot.get_channel(HAIR_ID_CHANNEL_ID)
+        if channel is None:
+            logger.warning(
+                "Salon %s introuvable (le bot n'y a peut-être pas accès)", HAIR_ID_CHANNEL_ID
+            )
+            return
         if not isinstance(channel, discord.ForumChannel):
+            logger.warning(
+                "Le salon %s n'est pas un forum (type: %s), auto-post désactivé",
+                HAIR_ID_CHANNEL_ID,
+                type(channel).__name__,
+            )
             return
 
         session = await self._get_session()
@@ -118,6 +144,7 @@ class HairCatalog(commands.Cog):
 
         items = data.get("data") or []
         if not items:
+            logger.warning("Catalogue Roblox : aucun item retourné pour %s", CATALOG_PARAMS)
             return
 
         posted = self._load_posted()
@@ -132,6 +159,7 @@ class HairCatalog(commands.Cog):
 
         image_url = await fetch_asset_thumbnail(session, asset_id)
         if not image_url:
+            logger.warning("Pas de thumbnail disponible pour l'ID %s, cycle ignoré", asset_id)
             return
 
         embed = discord.Embed(title=name, description=f"ID : `{asset_id}`")
@@ -142,6 +170,7 @@ class HairCatalog(commands.Cog):
             logger.exception("Échec de la création du post pour l'ID %s", asset_id)
             return
 
+        logger.info("Auto-post créé pour %s (%s)", name, asset_id)
         posted.append(asset_id)
         self._save_posted(posted[-500:])
 
