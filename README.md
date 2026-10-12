@@ -6,7 +6,6 @@ pour débloquer le reste du serveur, et salon de collecte d'ID (hair-id).
 ## Installation
 
 ```bash
-cd discord-bot
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
