@@ -1,0 +1,5 @@
+.env
+__pycache__/
+*.pyc
+data/warnings.json
+data/role_menu.json

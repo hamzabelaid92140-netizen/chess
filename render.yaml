@@ -1,0 +1,21 @@
+services:
+  - type: worker
+    name: deepwoken-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: GUILD_ID
+        sync: false
+      - key: VERIFIED_ROLE_ID
+        sync: false
+      - key: VERIFICATION_CHANNEL_ID
+        sync: false
+      - key: MOD_LOG_CHANNEL_ID
+        sync: false
+      - key: LINK_EXEMPT_CATEGORY_ID
+        sync: false
+      - key: SHOWCASE_CHANNEL_ID
+        sync: false
