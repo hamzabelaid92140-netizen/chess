@@ -24,9 +24,11 @@ async def on_ready():
     try:
         if GUILD_ID:
             guild = discord.Object(id=GUILD_ID)
-            await bot.tree.sync(guild=guild)
+            bot.tree.copy_global_to(guild=guild)
+            synced = await bot.tree.sync(guild=guild)
         else:
-            await bot.tree.sync()
+            synced = await bot.tree.sync()
+        logger.info("%d commande(s) slash synchronisée(s)", len(synced))
     except discord.HTTPException:
         logger.exception("Échec de la synchronisation des commandes slash")
 
