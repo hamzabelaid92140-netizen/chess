@@ -6,6 +6,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from cogs.permissions import handle_role_not_above_bot, role_above_bot
+
 logger = logging.getLogger("deepwoken-bot.roles")
 
 ROLE_MENU_FILE = Path(__file__).resolve().parent.parent / "data" / "role_menu.json"
@@ -86,9 +88,27 @@ class Roles(commands.Cog):
         options = _load_options()
         self.bot.add_view(RoleMenuView(options))
 
+    async def cog_app_command_error(
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+    ):
+        if isinstance(error, app_commands.MissingPermissions):
+            await interaction.response.send_message(
+                "Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True
+            )
+            return
+        if await handle_role_not_above_bot(interaction, error):
+            return
+        logger.exception("Erreur dans une commande de menu de rôles", exc_info=error)
+        message = "Une erreur est survenue."
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+
     @app_commands.command(name="role-menu-add", description="Ajoute une option au menu de rôles.")
     @app_commands.describe(label="Texte affiché", role="Le rôle à attribuer", emoji="Emoji optionnel")
     @app_commands.checks.has_permissions(administrator=True)
+    @role_above_bot()
     async def role_menu_add(
         self,
         interaction: discord.Interaction,
@@ -114,6 +134,7 @@ class Roles(commands.Cog):
     @app_commands.command(name="role-menu-remove", description="Retire une option du menu de rôles.")
     @app_commands.describe(label="Le texte exact de l'option à retirer")
     @app_commands.checks.has_permissions(administrator=True)
+    @role_above_bot()
     async def role_menu_remove(self, interaction: discord.Interaction, label: str):
         options = _load_options()
         new_options = [o for o in options if o["label"] != label]
@@ -128,6 +149,7 @@ class Roles(commands.Cog):
 
     @app_commands.command(name="role-menu-post", description="Poste le menu de rôles dans ce salon.")
     @app_commands.checks.has_permissions(administrator=True)
+    @role_above_bot()
     async def role_menu_post(self, interaction: discord.Interaction):
         options = _load_options()
         if not options:

@@ -10,6 +10,7 @@ from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
 from config import VERIFICATION_CHANNEL_ID, VERIFIED_ROLE_ID
+from cogs.permissions import handle_role_not_above_bot, role_above_bot
 
 logger = logging.getLogger("deepwoken-bot.verification")
 
@@ -128,6 +129,23 @@ class Verification(commands.Cog):
     async def on_ready(self):
         self.bot.add_view(VerifyView(self))
 
+    async def cog_app_command_error(
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+    ):
+        if isinstance(error, app_commands.MissingPermissions):
+            await interaction.response.send_message(
+                "Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True
+            )
+            return
+        if await handle_role_not_above_bot(interaction, error):
+            return
+        logger.exception("Erreur dans une commande de vérification", exc_info=error)
+        message = "Une erreur est survenue."
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+
     async def start_captcha(self, interaction: discord.Interaction, edit: bool = False):
         if interaction.guild is None:
             return
@@ -219,6 +237,7 @@ class Verification(commands.Cog):
         description="Poste le message de vérification dans ce salon.",
     )
     @app_commands.checks.has_permissions(administrator=True)
+    @role_above_bot()
     async def setup_verification(self, interaction: discord.Interaction):
         if VERIFICATION_CHANNEL_ID and interaction.channel_id != VERIFICATION_CHANNEL_ID:
             await interaction.response.send_message(

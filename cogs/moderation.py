@@ -8,6 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from config import MOD_LOG_CHANNEL_ID
+from cogs.permissions import handle_role_not_above_bot, role_above_bot
 
 logger = logging.getLogger("deepwoken-bot.moderation")
 
@@ -37,6 +38,8 @@ class Moderation(commands.Cog):
                 "Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True
             )
             return
+        if await handle_role_not_above_bot(interaction, error):
+            return
         logger.exception("Erreur dans une commande de modération", exc_info=error)
         message = "Une erreur est survenue."
         if interaction.response.is_done():
@@ -57,6 +60,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="kick", description="Expulse un membre du serveur.")
     @app_commands.describe(member="Le membre à expulser", reason="Raison de l'expulsion")
     @app_commands.checks.has_permissions(kick_members=True)
+    @role_above_bot()
     async def kick(
         self,
         interaction: discord.Interaction,
@@ -76,6 +80,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="ban", description="Bannit un membre du serveur.")
     @app_commands.describe(member="Le membre à bannir", reason="Raison du bannissement")
     @app_commands.checks.has_permissions(ban_members=True)
+    @role_above_bot()
     async def ban(
         self,
         interaction: discord.Interaction,
@@ -95,6 +100,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="unban", description="Débannit un utilisateur via son ID Discord.")
     @app_commands.describe(user_id="L'ID Discord de l'utilisateur à débannir")
     @app_commands.checks.has_permissions(ban_members=True)
+    @role_above_bot()
     async def unban(self, interaction: discord.Interaction, user_id: str):
         try:
             user = discord.Object(id=int(user_id))
@@ -123,6 +129,7 @@ class Moderation(commands.Cog):
         reason="Raison du mute",
     )
     @app_commands.checks.has_permissions(moderate_members=True)
+    @role_above_bot()
     async def mute(
         self,
         interaction: discord.Interaction,
@@ -147,6 +154,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="unmute", description="Retire le mute d'un membre.")
     @app_commands.describe(member="Le membre à démuter")
     @app_commands.checks.has_permissions(moderate_members=True)
+    @role_above_bot()
     async def unmute(self, interaction: discord.Interaction, member: discord.Member):
         try:
             await member.timeout(None, reason=f"Unmute par {interaction.user}")
@@ -159,6 +167,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="warn", description="Donne un avertissement à un membre.")
     @app_commands.describe(member="Le membre à avertir", reason="Raison de l'avertissement")
     @app_commands.checks.has_permissions(moderate_members=True)
+    @role_above_bot()
     async def warn(self, interaction: discord.Interaction, member: discord.Member, reason: str):
         data = _load_warnings()
         guild_warnings = data.setdefault(str(interaction.guild_id), {})
@@ -184,6 +193,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="warnings", description="Liste les avertissements d'un membre.")
     @app_commands.describe(member="Le membre dont on veut voir les avertissements")
     @app_commands.checks.has_permissions(moderate_members=True)
+    @role_above_bot()
     async def warnings(self, interaction: discord.Interaction, member: discord.Member):
         data = _load_warnings()
         user_warnings = data.get(str(interaction.guild_id), {}).get(str(member.id), [])
@@ -203,6 +213,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="clear", description="Supprime des messages récents dans ce salon.")
     @app_commands.describe(amount="Nombre de messages à supprimer (max 100)")
     @app_commands.checks.has_permissions(manage_messages=True)
+    @role_above_bot()
     async def clear(self, interaction: discord.Interaction, amount: app_commands.Range[int, 1, 100]):
         await interaction.response.defer(ephemeral=True)
         deleted = await interaction.channel.purge(limit=amount)

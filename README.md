@@ -37,6 +37,12 @@ Manage Roles (son rôle doit être placé au-dessus du rôle vérifié et de
 tous les rôles du menu de rôles), Kick Members, Ban Members, Moderate
 Members (timeout), Manage Messages.
 
+**Toutes les commandes sont des slash commands (`/`)**, et en plus des
+permissions Discord classiques, chacune vérifie que l'auteur a un rôle
+positionné au-dessus du rôle du bot dans la liste des rôles du serveur
+(le propriétaire du serveur passe toujours). Place donc le rôle du bot
+juste en dessous des rôles de modération/admin que tu veux autoriser.
+
 ## Lancement
 
 ```bash
