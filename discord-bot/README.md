@@ -41,3 +41,21 @@ python main.py
   est enregistré dans `data/hair_ids.json`. Un message invalide, ou envoyé
   par un membre non vérifié, est supprimé avec une explication en message
   privé.
+
+## Hébergement sur Render
+
+Le dépôt contient un `render.yaml` (à la racine) qui déclare un
+**Background Worker** Render pour ce bot.
+
+1. Sur https://dashboard.render.com, "New" → "Blueprint", et sélectionne
+   ce dépôt GitHub. Render détecte `render.yaml` automatiquement.
+2. Dans les paramètres du service créé (`deepwoken-bot`), onglet
+   "Environment", ajoute les variables : `DISCORD_TOKEN`, `GUILD_ID`,
+   `VERIFIED_ROLE_ID`, `VERIFICATION_CHANNEL_ID`, `HAIR_ID_CHANNEL_ID`.
+   Elles ne sont pas dans le repo (volontairement, pour ne pas exposer le
+   token) : à saisir uniquement dans l'interface Render.
+3. Déploie. Les logs du service doivent afficher `Connecté en tant que
+   <nom du bot>`.
+
+Un **Background Worker** ne reçoit pas de trafic HTTP, c'est fait pour un
+processus qui tourne en continu comme ce bot (pas pour une page web).
