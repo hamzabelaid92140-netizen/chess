@@ -21,11 +21,17 @@ Remplis `.env` :
 - `VERIFICATION_CHANNEL_ID` : l'ID du salon de vérification.
 - `MOD_LOG_CHANNEL_ID` (optionnel) : l'ID d'un salon où le bot publie un
   message pour chaque action de modération. Laisse vide pour désactiver.
+- `LINK_EXEMPT_CATEGORY_ID` : l'ID de la catégorie dans laquelle les liens
+  sont autorisés (pas de suppression/timeout). Dans toutes les autres
+  catégories, poster un lien supprime le message et timeout l'auteur 1h.
+- `SHOWCASE_CHANNEL_ID` (optionnel) : l'ID du salon showcase où le bot
+  réagit automatiquement (👍/❤️) aux messages contenant un lien.
 
 Le bot a besoin des intents "Server Members" et "Message Content" activés
 sur le portail développeurs, et des permissions suivantes sur le serveur :
-Manage Roles (son rôle doit être placé au-dessus du rôle vérifié), Kick
-Members, Ban Members, Moderate Members (timeout), Manage Messages.
+Manage Roles (son rôle doit être placé au-dessus du rôle vérifié et de
+tous les rôles du menu de rôles), Kick Members, Ban Members, Moderate
+Members (timeout), Manage Messages.
 
 ## Lancement
 
@@ -56,6 +62,21 @@ python main.py
   - `/clear <nombre>` — supprime les N derniers messages du salon.
   - Si `MOD_LOG_CHANNEL_ID` est configuré, chaque action est aussi
     postée dans ce salon.
+- **Auto-modération des liens** : tout lien posté hors de la catégorie
+  `LINK_EXEMPT_CATEGORY_ID` est supprimé, son auteur reçoit un timeout
+  d'1h et un message privé en anglais ("No links allowed here..."). Les
+  membres avec la permission "Manage Messages" (staff) ne sont pas
+  concernés.
+- **Menu de rôles**, commandes slash (admin) :
+  - `/role-menu-add <label> <rôle> [emoji]` — ajoute une option (ex :
+    archétype ou Oath Deepwoken).
+  - `/role-menu-remove <label>` — retire une option.
+  - `/role-menu-post` — poste le menu dans le salon courant. Les membres
+    choisissent leurs rôles via un menu déroulant ; re-sélectionner
+    retire le rôle (bascule).
+- **Showcase** : dans `SHOWCASE_CHANNEL_ID`, tout message contenant un
+  lien reçoit automatiquement les réactions 👍 et ❤️ (l'aperçu du lien
+  lui-même est géré nativement par Discord).
 
 ## Hébergement sur Render
 
@@ -66,7 +87,8 @@ Le dépôt contient un `render.yaml` (à la racine) qui déclare un
    ce dépôt GitHub. Render détecte `render.yaml` automatiquement.
 2. Dans les paramètres du service créé (`deepwoken-bot`), onglet
    "Environment", ajoute les variables : `DISCORD_TOKEN`, `GUILD_ID`,
-   `VERIFIED_ROLE_ID`, `VERIFICATION_CHANNEL_ID`, `MOD_LOG_CHANNEL_ID`.
+   `VERIFIED_ROLE_ID`, `VERIFICATION_CHANNEL_ID`, `MOD_LOG_CHANNEL_ID`,
+   `LINK_EXEMPT_CATEGORY_ID`, `SHOWCASE_CHANNEL_ID`.
    Elles ne sont pas dans le repo (volontairement, pour ne pas exposer le
    token) : à saisir uniquement dans l'interface Render.
 3. Déploie. Les logs du service doivent afficher `Connecté en tant que

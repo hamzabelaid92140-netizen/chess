@@ -15,3 +15,7 @@ services:
         sync: false
       - key: MOD_LOG_CHANNEL_ID
         sync: false
+      - key: LINK_EXEMPT_CATEGORY_ID
+        sync: false
+      - key: SHOWCASE_CHANNEL_ID
+        sync: false

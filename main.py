@@ -15,7 +15,13 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-EXTENSIONS = ["cogs.verification", "cogs.moderation"]
+EXTENSIONS = [
+    "cogs.verification",
+    "cogs.moderation",
+    "cogs.automod",
+    "cogs.roles",
+    "cogs.showcase",
+]
 
 
 @bot.event
