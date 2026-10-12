@@ -1,9 +1,8 @@
 # Bot Discord Deepwoken
 
-Bot pour un serveur Discord de builder Deepwoken : salon de vérification
-pour débloquer le reste du serveur, et forum hair-id qui transforme les
-ID Roblox postés par les membres en images, et publie lui-même des hair
-cuts trouvés sur le catalogue Roblox.
+Bot pour un serveur Discord de builder Deepwoken : vérification par
+captcha pour débloquer le reste du serveur, et commandes de modération
+(kick, ban, mute, warn, clear...).
 
 ## Installation
 
@@ -20,15 +19,13 @@ Remplis `.env` :
 - `GUILD_ID` : l'ID du serveur, pour synchroniser les commandes slash plus vite.
 - `VERIFIED_ROLE_ID` : l'ID du rôle attribué après vérification.
 - `VERIFICATION_CHANNEL_ID` : l'ID du salon de vérification.
-- `HAIR_ID_CHANNEL_ID` : l'ID du **forum** où les membres postent leur ID
-  et où le bot publie ses propres posts.
+- `MOD_LOG_CHANNEL_ID` (optionnel) : l'ID d'un salon où le bot publie un
+  message pour chaque action de modération. Laisse vide pour désactiver.
 
 Le bot a besoin des intents "Server Members" et "Message Content" activés
-sur le portail développeurs, de la permission "Manage Roles" sur le
-serveur (son rôle doit être placé au-dessus du rôle vérifié), et sur le
-forum hair-id : Envoyer des messages, Créer des posts publics, Gérer les
-fils (pour verrouiller les posts des membres non vérifiés), Intégrer des
-liens.
+sur le portail développeurs, et des permissions suivantes sur le serveur :
+Manage Roles (son rôle doit être placé au-dessus du rôle vérifié), Kick
+Members, Ban Members, Moderate Members (timeout), Manage Messages.
 
 ## Lancement
 
@@ -38,24 +35,27 @@ python main.py
 
 ## Fonctionnement
 
-- **Salon de vérification** : un administrateur lance `/setup-verification`
-  dans le salon configuré. Ça poste un message avec un bouton "Je me
-  vérifie". Au clic, le membre reçoit le rôle vérifié.
-- **Forum hair-id** : `HAIR_ID_CHANNEL_ID` doit être un salon **forum**
-  (pas un salon texte classique). Quand un membre vérifié crée un post
-  avec un ID Roblox dedans (4 à 15 chiffres), le bot répond dans le fil
-  avec l'image du hair cut correspondant (via l'API de thumbnails
-  Roblox). Un membre non vérifié voit son post verrouillé avec une
-  explication.
-- **Auto-post** : toutes les minutes, le bot pioche un hair cut sur le
-  catalogue Roblox (sans répéter ceux déjà postés, suivis dans
-  `data/posted_hair_ids.json`) et crée lui-même un post dans le forum
-  avec son image. Les identifiants de catégorie Roblox utilisés
-  (`Category=11`, `Subcategory=20`) viennent du forum développeurs
-  Roblox, pas d'une doc officielle à jour — si l'auto-post s'arrête de
-  trouver des items, ce sont probablement ces valeurs qui ont changé
-  côté Roblox. L'intervalle (1 min) se change dans
-  `cogs/hair_catalog.py`, `@tasks.loop(minutes=1)`.
+- **Vérification par captcha** : un administrateur lance
+  `/setup-verification` dans le salon configuré, ce qui poste un message
+  avec un bouton "Je me vérifie". Au clic, le bot génère une image avec
+  un code à 6 caractères (lettres/chiffres, distordu) et l'envoie en
+  message éphémère avec un bouton "Entrer le code" qui ouvre un
+  formulaire. 3 essais max, code valable 5 minutes ; un bouton "Nouveau
+  code" permet d'en régénérer un sans tout recommencer. Le rôle vérifié
+  n'est attribué qu'une fois le bon code entré.
+- **Modération**, commandes slash (permissions Discord correspondantes
+  requises) :
+  - `/kick <membre> [raison]`
+  - `/ban <membre> [raison]`
+  - `/unban <id>`
+  - `/mute <membre> <minutes> [raison]` (timeout Discord)
+  - `/unmute <membre>`
+  - `/warn <membre> <raison>` — enregistré dans `data/warnings.json`,
+    DM envoyé au membre.
+  - `/warnings <membre>` — liste ses avertissements.
+  - `/clear <nombre>` — supprime les N derniers messages du salon.
+  - Si `MOD_LOG_CHANNEL_ID` est configuré, chaque action est aussi
+    postée dans ce salon.
 
 ## Hébergement sur Render
 
@@ -66,7 +66,7 @@ Le dépôt contient un `render.yaml` (à la racine) qui déclare un
    ce dépôt GitHub. Render détecte `render.yaml` automatiquement.
 2. Dans les paramètres du service créé (`deepwoken-bot`), onglet
    "Environment", ajoute les variables : `DISCORD_TOKEN`, `GUILD_ID`,
-   `VERIFIED_ROLE_ID`, `VERIFICATION_CHANNEL_ID`, `HAIR_ID_CHANNEL_ID`.
+   `VERIFIED_ROLE_ID`, `VERIFICATION_CHANNEL_ID`, `MOD_LOG_CHANNEL_ID`.
    Elles ne sont pas dans le repo (volontairement, pour ne pas exposer le
    token) : à saisir uniquement dans l'interface Render.
 3. Déploie. Les logs du service doivent afficher `Connecté en tant que

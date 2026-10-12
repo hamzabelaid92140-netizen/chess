@@ -13,5 +13,5 @@ services:
         sync: false
       - key: VERIFICATION_CHANNEL_ID
         sync: false
-      - key: HAIR_ID_CHANNEL_ID
+      - key: MOD_LOG_CHANNEL_ID
         sync: false
