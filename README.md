@@ -26,6 +26,10 @@ Remplis `.env` :
   catégories, poster un lien supprime le message et timeout l'auteur 1h.
 - `SHOWCASE_CHANNEL_ID` (optionnel) : l'ID du salon showcase où le bot
   réagit automatiquement (👍/❤️) aux messages contenant un lien.
+- `GIF_ALLOWED_CHANNEL_IDS` (optionnel, par défaut les salons media et chat
+  du serveur) : liste d'IDs de salons séparés par des virgules où les liens
+  de GIF (tenor.com, giphy.com, gfycat.com, `.gif`) sont autorisés. Tout
+  autre lien dans ces salons est supprimé et sanctionné comme ailleurs.
 
 Le bot a besoin des intents "Server Members" et "Message Content" activés
 sur le portail développeurs, et des permissions suivantes sur le serveur :
@@ -66,7 +70,9 @@ python main.py
   `LINK_EXEMPT_CATEGORY_ID` est supprimé, son auteur reçoit un timeout
   d'1h et un message privé en anglais ("No links allowed here..."). Les
   membres avec la permission "Manage Messages" (staff) ne sont pas
-  concernés.
+  concernés. Exception : dans les salons listés par `GIF_ALLOWED_CHANNEL_IDS`
+  (media, chat), les liens de GIF sont autorisés ; tout autre lien y est
+  quand même supprimé et sanctionné.
 - **Menu de rôles**, commandes slash (admin) :
   - `/role-menu-add <label> <rôle> [emoji]` — ajoute une option (ex :
     archétype ou Oath Deepwoken).

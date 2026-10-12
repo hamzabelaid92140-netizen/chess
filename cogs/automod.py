@@ -5,12 +5,16 @@ from datetime import timedelta
 import discord
 from discord.ext import commands
 
-from config import LINK_EXEMPT_CATEGORY_ID, MOD_LOG_CHANNEL_ID
+from config import GIF_ALLOWED_CHANNEL_IDS, LINK_EXEMPT_CATEGORY_ID, MOD_LOG_CHANNEL_ID
 
 logger = logging.getLogger("deepwoken-bot.automod")
 
 LINK_PATTERN = re.compile(
     r"(https?://\S+|www\.\S+|discord(?:app)?\.com/invite/\S+|discord\.gg/\S+)",
+    re.IGNORECASE,
+)
+GIF_LINK_PATTERN = re.compile(
+    r"\.gif(?:$|[?&#])|tenor\.com|giphy\.com|gfycat\.com",
     re.IGNORECASE,
 )
 TIMEOUT_DURATION = timedelta(hours=1)
@@ -47,7 +51,13 @@ class AutoMod(commands.Cog):
         if isinstance(message.author, discord.Member) and message.author.guild_permissions.manage_messages:
             return
 
-        if not LINK_PATTERN.search(message.content):
+        links = [match.group(0) for match in LINK_PATTERN.finditer(message.content)]
+        if not links:
+            return
+
+        if channel.id in GIF_ALLOWED_CHANNEL_IDS and all(
+            GIF_LINK_PATTERN.search(link) for link in links
+        ):
             return
 
         try:
